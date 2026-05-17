@@ -182,6 +182,9 @@
     .action-btn.share             { color: var(--indigo); border-color: #2a2a3a; background: rgba(99,102,241,.08); }
     .action-btn.share:hover       { background: var(--indigo); border-color: var(--indigo); color: #fff; }
     .action-btn.share.done        { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+    .action-btn.enter             { color: #6ee7b7; border-color: #1a2e28; background: rgba(110,231,183,.06); font-size: 16px; }
+    .action-btn.enter:hover       { background: #10b981; border-color: #10b981; color: #000; }
+    .action-btn.enter.done        { background: #10b981; border-color: #10b981; color: #000; }
 
     .no-share-note {
       margin-top: 12px; font-size: 11px; color: #444; font-family: var(--mono);
@@ -380,6 +383,9 @@
       ${canShare ? `
       <span class="legend-item">
         <span class="legend-dot" style="background:var(--indigo)"></span>share / InputStick
+      </span>
+      <span class="legend-item">
+        <span class="legend-dot" style="background:#10b981"></span>send Enter key
       </span>` : ''}
     `;
     noShare.style.display = canShare ? 'none' : 'block';
@@ -390,9 +396,10 @@
         <span class="var-text">${esc(v)}</span>
         <div class="btn-group">
           <button class="action-btn copy" id="copy-${i}" data-idx="${i}" title="Copy to clipboard">⎘</button>
-          ${canShare
-            ? `<button class="action-btn share" id="share-${i}" data-idx="${i}" title="Share / InputStick">↑</button>`
-            : ''}
+          ${canShare ? `
+          <button class="action-btn share" id="share-${i}" data-idx="${i}" title="Share via InputStick (types text + Enter)">↑</button>
+          <button class="action-btn enter" id="enter-${i}" data-idx="${i}" title="Send Enter key via InputStick">↵</button>
+          ` : ''}
         </div>
       </div>
     `).join('');
@@ -403,6 +410,9 @@
     if (canShare) {
       list.querySelectorAll('.action-btn.share').forEach(btn =>
         btn.addEventListener('click', () => doShare(+btn.dataset.idx))
+      );
+      list.querySelectorAll('.action-btn.enter').forEach(btn =>
+        btn.addEventListener('click', () => doEnterKey(+btn.dataset.idx))
       );
     }
   }
@@ -417,11 +427,23 @@
 
   async function doShare(idx) {
     try {
-      await navigator.share({ text: state.variations[idx] });
+      // Append \n so InputStick automatically hits Enter after typing the text
+      await navigator.share({ text: state.variations[idx] + '\n' });
       const btn = document.getElementById(`share-${idx}`);
       if (!btn) return;
       btn.textContent = '✓'; btn.classList.add('done');
       setTimeout(() => { btn.textContent = '↑'; btn.classList.remove('done'); }, 1800);
+    } catch { /* user cancelled */ }
+  }
+
+  async function doEnterKey(idx) {
+    try {
+      // Share just a newline — InputStick types Enter on its own
+      await navigator.share({ text: '\n' });
+      const btn = document.getElementById(`enter-${idx}`);
+      if (!btn) return;
+      btn.textContent = '✓'; btn.classList.add('done');
+      setTimeout(() => { btn.textContent = '↵'; btn.classList.remove('done'); }, 1800);
     } catch { /* user cancelled */ }
   }
 
