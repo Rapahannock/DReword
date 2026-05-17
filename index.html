@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚙ SpeechFix</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange: #f97316;
+      --indigo: #6366f1;
+      --green:  #15803d;
+      --red:    #ef4444;
+      --bg:     #0d0d0d;
+      --card:   #111111;
+      --card2:  #141414;
+      --card3:  #161616;
+      --panel:  #0f0f0f;
+      --border: #1e1e1e;
+      --border2:#252525;
+      --text:   #e2e8f0;
+      --dim:    #d8dde6;
+      --muted:  #555555;
+      --mono:   'Space Mono', monospace;
+      --sans:   'Syne', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      padding: 28px 20px 80px;
+      max-width: 720px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #111; }
+    ::-webkit-scrollbar-thumb { background: var(--orange); border-radius: 3px; }
+
+    /* ── Header ── */
+    .header { margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+    .logo { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--orange); letter-spacing: 3px; }
+    .sub  { font-family: var(--mono); font-size: 11px; color: #444; letter-spacing: 2px; margin-top: 5px; }
+
+    /* ── Section / Label ── */
+    .section { margin-bottom: 28px; }
+    .label {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 2.5px;
+      color: var(--orange); font-weight: 700; margin-bottom: 10px; display: block;
+    }
+
+    /* ── Textarea ── */
+    textarea {
+      width: 100%; background: var(--card2); border: 1.5px solid #222;
+      border-radius: 8px; color: var(--text); padding: 14px 16px;
+      font-size: 15px; font-family: var(--sans); resize: vertical;
+      outline: none; line-height: 1.6; transition: border-color .15s;
+    }
+    textarea:focus { border-color: var(--orange); }
+    textarea::placeholder { color: #4a4a4a; }
+
+    /* ── Context Grid ── */
+    .ctx-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .ctx-btn {
+      background: var(--card2); border: 1.5px solid #222; border-radius: 8px;
+      padding: 10px 8px; cursor: pointer; display: flex; flex-direction: column;
+      align-items: center; gap: 4px; color: var(--text); transition: all .15s;
+    }
+    .ctx-btn:hover  { border-color: var(--orange); background: rgba(249,115,22,.08); }
+    .ctx-btn.active { border-color: var(--orange); background: rgba(249,115,22,.15); }
+    .ctx-emoji { font-size: 18px; }
+    .ctx-label { font-family: var(--mono); font-size: 11px; font-weight: 700; }
+    .ctx-desc  { font-size: 10px; color: var(--muted); text-align: center; line-height: 1.3; }
+
+    /* ── Rules ── */
+    .rules-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .toggle-btn {
+      background: transparent; border: 1px solid #2a2a2a; border-radius: 4px;
+      color: #666; font-size: 11px; font-family: var(--mono); cursor: pointer;
+      padding: 3px 8px; transition: all .15s;
+    }
+    .toggle-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+    .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+    .pill {
+      background: var(--card2); border: 1px solid var(--border2); border-radius: 20px;
+      padding: 4px 11px; font-size: 12px; font-family: var(--mono);
+    }
+    .pill-find  { color: #777; }
+    .pill-arrow { color: var(--orange); margin: 0 4px; }
+
+    .rules-panel {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 8px;
+    }
+    .rule-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; background: var(--card3); border-radius: 6px;
+    }
+    .rule-find    { font-family: var(--mono); font-size: 12px; color: #777; }
+    .rule-arrow   { color: var(--orange); font-size: 13px; }
+    .rule-replace { font-family: var(--mono); font-size: 12px; }
+    .rule-note    { font-size: 11px; color: #444; flex: 1; }
+    .del-btn {
+      background: transparent; border: none; color: var(--red);
+      cursor: pointer; font-size: 12px; margin-left: auto;
+      padding: 0 4px; opacity: 0.4; transition: opacity .15s;
+    }
+    .rule-row:hover .del-btn { opacity: 1; }
+
+    .add-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+    input[type="text"] {
+      flex: 1; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px;
+      color: var(--text); padding: 7px 10px; font-size: 12px; font-family: var(--mono);
+      outline: none; min-width: 80px; transition: border-color .15s;
+    }
+    input[type="text"]:focus { border-color: var(--orange); }
+    input[type="text"]::placeholder { color: #3a3a3a; }
+    .add-btn {
+      background: var(--orange); border: none; border-radius: 6px; color: #000;
+      font-family: var(--mono); font-weight: 700; font-size: 12px;
+      padding: 8px 14px; cursor: pointer; white-space: nowrap; transition: background .15s;
+    }
+    .add-btn:hover { background: #ea580c; }
+
+    /* ── Generate Button ── */
+    .gen-btn {
+      width: 100%; background: var(--orange); border: none; border-radius: 10px;
+      color: #000; font-family: var(--mono); font-weight: 700; font-size: 14px;
+      padding: 16px 20px; cursor: pointer; letter-spacing: 1px; margin-bottom: 24px;
+      transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .gen-btn:hover:not(:disabled)  { background: #ea580c; transform: scale(1.01); }
+    .gen-btn:active:not(:disabled) { transform: scale(.99); }
+    .gen-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 15px; height: 15px; border: 2px solid rgba(0,0,0,.25);
+      border-top-color: #000; border-radius: 50%;
+      animation: spin 0.7s linear infinite; flex-shrink: 0;
+    }
+
+    /* ── Error ── */
+    .error-box {
+      background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.25);
+      border-radius: 8px; color: var(--red); padding: 12px 16px;
+      font-size: 13px; font-family: var(--mono); margin-bottom: 20px;
+    }
+
+    /* ── Legend ── */
+    .legend { display: flex; gap: 16px; margin-bottom: 10px; align-items: center; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #555; font-family: var(--mono); }
+    .legend-dot  { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+    /* ── Variation Cards ── */
+    .variations-list { display: flex; flex-direction: column; gap: 10px; }
+    .var-card {
+      background: var(--card); border: 1.5px solid #1c1c1c; border-radius: 10px;
+      padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px;
+      transition: transform .12s, box-shadow .12s;
+    }
+    .var-card:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(249,115,22,.1); }
+    .var-num  { font-family: var(--mono); font-size: 11px; color: var(--orange); min-width: 22px; margin-top: 2px; opacity: 0.6; }
+    .var-text { flex: 1; font-size: 15px; line-height: 1.6; color: var(--dim); }
+    .btn-group { display: flex; flex-direction: column; gap: 6px; align-self: flex-start; }
+
+    .action-btn {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 6px;
+      color: #888; font-size: 14px; width: 36px; height: 34px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .15s; font-family: var(--mono);
+    }
+    .action-btn.copy:hover        { background: var(--orange); border-color: var(--orange); color: #000; }
+    .action-btn.copy.done         { background: var(--green);  border-color: var(--green);  color: #fff; }
+    .action-btn.share             { color: var(--indigo); border-color: #2a2a3a; background: rgba(99,102,241,.08); }
+    .action-btn.share:hover       { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+    .action-btn.share.done        { background: var(--indigo); border-color: var(--indigo); color: #fff; }
+
+    .no-share-note {
+      margin-top: 12px; font-size: 11px; color: #444; font-family: var(--mono);
+      padding: 10px 14px; background: var(--panel); border-radius: 6px; border: 1px solid var(--border);
+    }
+
+    /* ── Footer ── */
+    .footer { text-align: center; font-size: 11px; color: #2a2a2a; font-family: var(--mono); margin-top: 40px; letter-spacing: 1px; }
+
+    /* ── Mobile ── */
+    @media (max-width: 480px) {
+      .ctx-grid { grid-template-columns: repeat(2, 1fr); }
+      body { padding: 20px 16px 80px; }
+      .logo { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="logo">⚙ SPEECHFIX</div>
+    <div class="sub">speech-to-text → human text</div>
+  </div>
+
+  <div class="section">
+    <label class="label">RAW SPEECH INPUT</label>
+    <textarea id="input" rows="4" placeholder="Paste or type your garbled speech-to-text here..."></textarea>
+  </div>
+
+  <div class="section">
+    <label class="label">TONE / CONTEXT</label>
+    <div class="ctx-grid" id="ctx-grid"></div>
+  </div>
+
+  <div class="section">
+    <div class="rules-header">
+      <label class="label" style="margin-bottom:0">CORRECTION RULES</label>
+      <button class="toggle-btn" id="toggle-rules">▼ manage (2)</button>
+    </div>
+    <div id="rules-pills" class="pills"></div>
+    <div id="rules-panel" style="display:none"></div>
+  </div>
+
+  <button class="gen-btn" id="gen-btn">
+    <span id="gen-label">Generate 10 Variations  ·  💬 Casual</span>
+  </button>
+
+  <div id="error-box" class="error-box" style="display:none"></div>
+
+  <div id="variations-section" class="section" style="display:none">
+    <label class="label">PICK YOUR VERSION</label>
+    <div id="legend" class="legend"></div>
+    <div id="variations-list" class="variations-list"></div>
+    <div id="no-share-note" class="no-share-note" style="display:none">
+      ⓘ Share sheet not available in this browser — use Copy instead. Works natively on mobile.
+    </div>
+  </div>
+
+  <div class="footer">built for speech-to-text reality · rules are yours to own</div>
+
+<script>
+  // ─── State ─────────────────────────────────────────────────────────────────
+  const state = {
+    context: 'casual',
+    rules: [
+      { id: 1, find: 'aldi',   replace: 'Aldy',   note: "Person's name"      },
+      { id: 2, find: 'emtala', replace: 'EMTALA', note: 'Medical law acronym' },
+    ],
+    variations: [],
+    loading: false,
+    showRules: false,
+  };
+
+  const CONTEXTS = [
+    { id: 'casual',    emoji: '💬', label: 'Casual',          desc: 'Just chatting, no big deal'       },
+    { id: 'comical',   emoji: '😂', label: 'Comical',         desc: 'Funny, joking, lighthearted'      },
+    { id: 'serious',   emoji: '🎯', label: 'Serious',         desc: 'This actually matters'            },
+    { id: 'warning',   emoji: '⚠️', label: 'Warning / Omen',  desc: 'Heads up, bad feeling, watch out' },
+    { id: 'dramatic',  emoji: '🎭', label: 'Dramatic',        desc: 'Extra / theatrical energy'        },
+    { id: 'venting',   emoji: '🔥', label: 'Venting',         desc: 'Frustrated, annoyed, letting it out' },
+    { id: 'hype',      emoji: '🚀', label: 'Hype',            desc: "Excited, pumped, can't wait"      },
+    { id: 'sarcastic', emoji: '🙄', label: 'Sarcastic',       desc: 'Dry, eye-roll, deadpan'           },
+  ];
+
+  // ─── Helpers ───────────────────────────────────────────────────────────────
+  const esc  = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const getCtx = () => CONTEXTS.find(c => c.id === state.context);
+
+  // ─── Context Grid ──────────────────────────────────────────────────────────
+  function renderCtxGrid() {
+    const grid = document.getElementById('ctx-grid');
+    grid.innerHTML = CONTEXTS.map(c => `
+      <button class="ctx-btn ${state.context === c.id ? 'active' : ''}" data-ctx="${c.id}" title="${c.desc}">
+        <span class="ctx-emoji">${c.emoji}</span>
+        <span class="ctx-label">${c.label}</span>
+        <span class="ctx-desc">${c.desc}</span>
+      </button>
+    `).join('');
+    grid.querySelectorAll('.ctx-btn').forEach(btn =>
+      btn.addEventListener('click', () => {
+        state.context = btn.dataset.ctx;
+        renderCtxGrid();
+        updateGenBtn();
+      })
+    );
+  }
+
+  function updateGenBtn() {
+    const ctx = getCtx();
+    document.getElementById('gen-label').textContent =
+      `Generate 10 Variations  ·  ${ctx.emoji} ${ctx.label}`;
+  }
+
+  // ─── Rules ─────────────────────────────────────────────────────────────────
+  function renderRules() {
+    const count = state.rules.length;
+    document.getElementById('toggle-rules').textContent =
+      `${state.showRules ? '▲ hide' : '▼ manage'} (${count})`;
+
+    // Pills (collapsed view)
+    const pillsEl = document.getElementById('rules-pills');
+    if (!state.showRules) {
+      pillsEl.style.display = 'flex';
+      pillsEl.innerHTML = count
+        ? state.rules.map(r => `
+            <span class="pill">
+              <span class="pill-find">${esc(r.find)}</span>
+              <span class="pill-arrow">→</span>
+              <span>${esc(r.replace)}</span>
+            </span>`).join('')
+        : '<span style="color:#444;font-size:13px">No rules set</span>';
+    } else {
+      pillsEl.style.display = 'none';
+    }
+
+    // Panel (expanded view)
+    const panel = document.getElementById('rules-panel');
+    if (!state.showRules) { panel.style.display = 'none'; return; }
+
+    panel.style.display = 'flex';
+    panel.className = 'rules-panel';
+    panel.innerHTML = `
+      ${state.rules.map(r => `
+        <div class="rule-row">
+          <span class="rule-find">"${esc(r.find)}"</span>
+          <span class="rule-arrow">→</span>
+          <span class="rule-replace">"${esc(r.replace)}"</span>
+          <span class="rule-note">${esc(r.note || '')}</span>
+          <button class="del-btn" data-id="${r.id}" title="Remove rule">✕</button>
+        </div>`).join('')}
+      <div class="add-row">
+        <input type="text" id="new-find"    placeholder="speech hears..."  />
+        <span style="color:var(--orange)">→</span>
+        <input type="text" id="new-replace" placeholder="should be..."     />
+        <input type="text" id="new-note"    placeholder="note (optional)"  style="flex:1.5" />
+        <button class="add-btn" id="add-rule-btn">+ Add</button>
+      </div>
+    `;
+
+    panel.querySelectorAll('.del-btn').forEach(btn =>
+      btn.addEventListener('click', () => {
+        state.rules = state.rules.filter(r => r.id !== +btn.dataset.id);
+        renderRules();
+      })
+    );
+
+    const doAdd = () => {
+      const find    = document.getElementById('new-find').value.trim();
+      const replace = document.getElementById('new-replace').value.trim();
+      const note    = document.getElementById('new-note').value.trim();
+      if (!find || !replace) return;
+      state.rules.push({ id: Date.now(), find, replace, note });
+      renderRules();
+    };
+    document.getElementById('add-rule-btn').addEventListener('click', doAdd);
+    ['new-find','new-replace','new-note'].forEach(id =>
+      document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(); })
+    );
+  }
+
+  // ─── Variations ────────────────────────────────────────────────────────────
+  function renderVariations() {
+    const section  = document.getElementById('variations-section');
+    const list     = document.getElementById('variations-list');
+    const legend   = document.getElementById('legend');
+    const noShare  = document.getElementById('no-share-note');
+    const canShare = !!navigator.share;
+
+    if (!state.variations.length) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+
+    legend.innerHTML = `
+      <span class="legend-item">
+        <span class="legend-dot" style="background:var(--orange)"></span>copy to clipboard
+      </span>
+      ${canShare ? `
+      <span class="legend-item">
+        <span class="legend-dot" style="background:var(--indigo)"></span>share / InputStick
+      </span>` : ''}
+    `;
+    noShare.style.display = canShare ? 'none' : 'block';
+
+    list.innerHTML = state.variations.map((v, i) => `
+      <div class="var-card">
+        <span class="var-num">${String(i + 1).padStart(2, '0')}</span>
+        <span class="var-text">${esc(v)}</span>
+        <div class="btn-group">
+          <button class="action-btn copy" id="copy-${i}" data-idx="${i}" title="Copy to clipboard">⎘</button>
+          ${canShare
+            ? `<button class="action-btn share" id="share-${i}" data-idx="${i}" title="Share / InputStick">↑</button>`
+            : ''}
+        </div>
+      </div>
+    `).join('');
+
+    list.querySelectorAll('.action-btn.copy').forEach(btn =>
+      btn.addEventListener('click', () => doCopy(+btn.dataset.idx))
+    );
+    if (canShare) {
+      list.querySelectorAll('.action-btn.share').forEach(btn =>
+        btn.addEventListener('click', () => doShare(+btn.dataset.idx))
+      );
+    }
+  }
+
+  function doCopy(idx) {
+    navigator.clipboard.writeText(state.variations[idx]).catch(() => {});
+    const btn = document.getElementById(`copy-${idx}`);
+    if (!btn) return;
+    btn.textContent = '✓'; btn.classList.add('done');
+    setTimeout(() => { btn.textContent = '⎘'; btn.classList.remove('done'); }, 1800);
+  }
+
+  async function doShare(idx) {
+    try {
+      await navigator.share({ text: state.variations[idx] });
+      const btn = document.getElementById(`share-${idx}`);
+      if (!btn) return;
+      btn.textContent = '✓'; btn.classList.add('done');
+      setTimeout(() => { btn.textContent = '↑'; btn.classList.remove('done'); }, 1800);
+    } catch { /* user cancelled */ }
+  }
+
+  // ─── Generate ──────────────────────────────────────────────────────────────
+  async function generate() {
+    const input = document.getElementById('input').value.trim();
+    if (!input || state.loading) return;
+
+    state.loading = true;
+    const btn = document.getElementById('gen-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Generating 10 variations...';
+    document.getElementById('error-box').style.display = 'none';
+    state.variations = [];
+    renderVariations();
+
+    const ctx = getCtx();
+    const rulesText = state.rules.length
+      ? state.rules.map(r =>
+          `- Replace any instance of "${r.find}" (case-insensitive) with "${r.replace}"${r.note ? ` — note: ${r.note}` : ''}`
+        ).join('\n')
+      : 'No rules set.';
+
+    const prompt = `You are a speech-to-text corrector and rewriter. Fix garbled speech-to-text and rewrite as natural human chat messages.
+
+CORRECTION RULES (apply ALL without exception):
+${rulesText}
+
+TONE / CONTEXT: ${ctx.label} — ${ctx.desc}
+
+RAW SPEECH-TO-TEXT INPUT:
+"${input}"
+
+INSTRUCTIONS:
+- Generate exactly 10 different rewrites.
+- Apply all correction rules.
+- Sound like a real person texting — NOT AI-generated.
+- Zero AI tells: no em dashes, no bullet points, no "it's worth noting", no "certainly", no formal language.
+- Lean hard into the tone/context above.
+- Vary energy, length, punctuation, and phrasing across all 10.
+- Use caps, ellipses, slang, or emoji where it fits the tone naturally.
+- Keep core meaning accurate.
+
+Return ONLY a raw JSON array of 10 strings. No markdown, no explanation, no preamble.`;
+
+    try {
+      const res = await fetch('/api/proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1500,
+          system: 'Output only a valid raw JSON array of strings. No markdown fences, no explanation — just the JSON array.',
+          messages: [{ role: 'user', content: prompt }],
+        }),
+      });
+
+      const data  = await res.json();
+      const raw   = (data.content || []).map(b => b.text || '').join('');
+      const clean = raw.replace(/```json|```/gi, '').trim();
+      const parsed = JSON.parse(clean);
+      if (!Array.isArray(parsed)) throw new Error('Bad shape');
+      state.variations = parsed.slice(0, 10);
+      renderVariations();
+    } catch {
+      const errBox = document.getElementById('error-box');
+      errBox.textContent = "Couldn't generate variations. Check your connection and try again.";
+      errBox.style.display = 'block';
+    } finally {
+      state.loading = false;
+      btn.disabled = false;
+      updateGenBtn();
+    }
+  }
+
+  // ─── Boot ──────────────────────────────────────────────────────────────────
+  renderCtxGrid();
+  renderRules();
+  updateGenBtn();
+
+  document.getElementById('toggle-rules').addEventListener('click', () => {
+    state.showRules = !state.showRules;
+    renderRules();
+  });
+
+  document.getElementById('gen-btn').addEventListener('click', generate);
+
+  // Cmd/Ctrl+Enter to generate
+  document.getElementById('input').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) generate();
+  });
+</script>
+</body>
+</html>
